@@ -1,0 +1,54 @@
+# =========================
+# ENV FILES (SECRETS)
+# =========================
+.env
+backend/.env
+
+# =========================
+# NODE / BACKEND
+# =========================
+backend/node_modules/
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+backend/package-lock.json
+
+# =========================
+# LOGS
+# =========================
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# VS CODE / IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# DATABASE / LOCAL TEMP FILES
+# =========================
+*.sqlite
+*.db
+*.sql.tmp
+
+# =========================
+# TEST / COVERAGE
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# OPTIONAL BUILD / DIST
+# =========================
+dist/
+build/

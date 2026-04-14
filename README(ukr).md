@@ -182,7 +182,7 @@
 
 ---
 
-## 4) Створити нову чисту БД
+## 4) Створити нову чисту БД ✅
 З нуля.
 
 ### Потрібно:
@@ -193,37 +193,47 @@
 
 ---
 
-## 5) Додати тестові дані вручну
-Щоб перевірити, що база реально працює.
-
-### Мінімум:
-- 1 employee
-- 1 system
-- 1 service
-- 1 qualification
-- 1 service dependency
+## 5) Додати тестові дані вручну ✅
+- [x] employees додані
+- [x] systems додані
+- [x] services додані
+- [x] qualifications додані
+- [x] service_required_systems додані
 
 ---
 
-## 6) Перевірити БД в DBeaver
-Переконатися, що:
-- дані реально зберігаються
-- зв’язки працюють
-- все видно в таблицях
+## 6) Перевірити БД в DBeaver ✅
+- [x] дані реально зберігаються
+- [x] зв’язки працюють
+- [x] все видно в таблицях
+- [x] UNIQUE працює
+- [x] FOREIGN KEY працює
+- [x] UPDATE працює
+- [x] CASCADE працює
+- [x] smart query для service → employee працює
 
 ---
 
-## 7) Зробити backend для Employees
+## DB status ✅ 
+Core database for Phase 1 is working.
+Test data inserted.
+Main relationships verified.
+Constraints verified.
+Ready to start backend for Employees.
+
+---
+
+## 7) Зробити backend для Employees ✅
 ### Потрібно:
-- create employee
-- get employees list
-- get employee details
-- update employee
-- deactivate employee
+- create employee ✅
+- get employees list ✅
+- get employee details ✅
+- update employee ✅
+- deactivate employee✅
 
 ---
 
-## 8) Зробити backend для Systems
+## 8) Зробити backend для Systems ✅
 ### Потрібно:
 - create system
 - get systems list
@@ -233,7 +243,7 @@
 
 ---
 
-## 9) Зробити backend для Services
+## 9) Зробити backend для Services ✅
 ### Потрібно:
 - create service
 - get services list
@@ -243,21 +253,23 @@
 
 ---
 
-## 10) Зробити backend для qualifications
-### Потрібно:
+## 10) Зробити backend для qualifications ✅
+### Потрібно: 
 - create qualification
 - update qualification
 - get qualifications by employee
 - get qualifications by system
+- delete qualification
 
 ---
 
-## 11) Зробити backend для service_required_systems
+## 11) Зробити backend для service_required_systems ✅
 ### Потрібно:
 - link system to service
 - update service-system link
 - get systems by service
 - get services by system
+- delete service-system link
 
 ---
 
