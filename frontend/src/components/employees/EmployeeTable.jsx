@@ -3,6 +3,7 @@ export default function EmployeeTable({
   selectedEmployeeId,
   onSelect,
   onEdit,
+  onDeactivate,
 }) {
   return (
     <section className="panel">
@@ -14,18 +15,17 @@ export default function EmployeeTable({
       </div>
 
       <div className="table-wrap">
-        <table className="employees-table">
+        <table className="employees-table compact-table">
           <thead>
             <tr>
               <th>Ansatt</th>
               <th>Avd.</th>
-              <th>Lokasjon</th>
               <th>Avail</th>
               <th>Qualified</th>
               <th>Fully</th>
               <th>Expert</th>
-              <th>Gaps</th>
-              <th>Actions</th>
+              <th>Access gaps</th>
+              <th></th>
             </tr>
           </thead>
 
@@ -37,17 +37,18 @@ export default function EmployeeTable({
               >
                 <td>
                   <div className="name-cell">
-                    <strong>{employee.name}</strong>
-                    <span>#{employee.id} • {employee.role}</span>
+                    <strong>{employee.full_name}</strong>
+                    <span>{employee.id}</span>
                   </div>
                 </td>
-                <td>{employee.department}</td>
-                <td>{employee.location}</td>
-                <td>{employee.availability}%</td>
-                <td>{employee.qualified}</td>
-                <td>{employee.fully}</td>
-                <td>{employee.expert}</td>
-                <td>{employee.accessGaps}</td>
+
+                <td>{employee.department || "—"}</td>
+                <td>{Number(employee.availability_percent || 0)}%</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+
                 <td>
                   <div className="row-actions">
                     <button className="ghost-btn" onClick={() => onSelect(employee)}>
@@ -56,6 +57,14 @@ export default function EmployeeTable({
                     <button className="ghost-btn" onClick={() => onEdit(employee)}>
                       Rediger
                     </button>
+                    {Number(employee.active) === 1 && (
+                      <button
+                        className="ghost-btn danger-btn"
+                        onClick={() => onDeactivate(employee)}
+                      >
+                        Deactivate
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -63,7 +72,7 @@ export default function EmployeeTable({
 
             {employees.length === 0 && (
               <tr>
-                <td colSpan="9" className="empty-state">
+                <td colSpan="8" className="empty-state">
                   Ingen ansatte funnet
                 </td>
               </tr>

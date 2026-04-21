@@ -390,3 +390,76 @@ select {
     width: 100%;
   }
 }
+
+.danger-btn {
+  border-color: rgba(255, 99, 132, 0.35);
+  color: #ffb3c2;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  min-height: auto;
+}
+
+.compact-table th,
+.compact-table td {
+  padding: 18px 14px;
+}
+
+.compact-table th {
+  font-size: 15px;
+}
+
+.compact-table td {
+  font-size: 15px;
+}
+
+.compact-table .name-cell strong {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.compact-table .name-cell span {
+  font-size: 14px;
+  color: #8fa7c6;
+}
+
+.compact-table th:first-child,
+.compact-table td:first-child {
+  min-width: 320px;
+}
+
+.compact-table th:nth-child(2),
+.compact-table td:nth-child(2) {
+  min-width: 180px;
+}
+
+.compact-table th:last-child,
+.compact-table td:last-child {
+  min-width: 260px;
+}
+
+.compact-table .row-actions {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+.compact-table .ghost-btn {
+  min-width: 88px;
+}
+
+.form-select {
+  min-height: 44px;
+  background: #0d1b31;
+  color: #e8eef9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.employee-form input:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}

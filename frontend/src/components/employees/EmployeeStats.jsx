@@ -1,8 +1,17 @@
 export default function EmployeeStats({ employees }) {
   const totalPeople = employees.length;
-  const totalQualified = employees.reduce((sum, e) => sum + (e.qualified ?? 0), 0);
-  const totalExperts = employees.reduce((sum, e) => sum + (e.expert ?? 0), 0);
-  const totalGaps = employees.reduce((sum, e) => sum + (e.accessGaps ?? 0), 0);
+  const activePeople = employees.filter((e) => Number(e.active) === 1).length;
+  const inactivePeople = employees.filter((e) => Number(e.active) !== 1).length;
+
+  const avgAvailability =
+    employees.length > 0
+      ? Math.round(
+          employees.reduce(
+            (sum, e) => sum + Number(e.availability_percent || 0),
+            0
+          ) / employees.length
+        )
+      : 0;
 
   return (
     <div className="stats-grid">
@@ -11,16 +20,16 @@ export default function EmployeeStats({ employees }) {
         <strong>{totalPeople}</strong>
       </div>
       <div className="stat-card">
-        <span>Qualified services</span>
-        <strong>{totalQualified}</strong>
+        <span>Active</span>
+        <strong>{activePeople}</strong>
       </div>
       <div className="stat-card">
-        <span>Expert footprints</span>
-        <strong>{totalExperts}</strong>
+        <span>Inactive</span>
+        <strong>{inactivePeople}</strong>
       </div>
       <div className="stat-card">
-        <span>Access gaps</span>
-        <strong>{totalGaps}</strong>
+        <span>Avg availability</span>
+        <strong>{avgAvailability}%</strong>
       </div>
     </div>
   );

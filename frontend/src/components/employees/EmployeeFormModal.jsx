@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 
+const departmentOptions = [
+  "Administration",
+  "Customer Service",
+  "Infrastructure",
+  "Operations",
+  "Support",
+  "Utvikling",
+  "Infra",
+  "OPS",
+  "Sales & Marketing",
+];
+
 const emptyForm = {
-  id: "",
-  name: "",
+  employee_code: "",
+  full_name: "",
+  email: "",
+  role_title: "",
   department: "",
-  role: "",
   location: "",
-  availability: 100,
-  qualified: 0,
-  fully: 0,
-  expert: 0,
-  accessGaps: 0,
-  serviceFootprint: "",
-  systems: [],
+  availability_percent: 100,
+  active: true,
+  notes: "",
 };
 
 export default function EmployeeFormModal({
@@ -21,35 +30,44 @@ export default function EmployeeFormModal({
   employee,
   onClose,
   onSave,
+  nextEmployeeCode,
 }) {
   const [form, setForm] = useState(emptyForm);
-  const [systemsText, setSystemsText] = useState("");
 
   useEffect(() => {
     if (!open) return;
 
     if (employee) {
       setForm({
-        ...emptyForm,
-        ...employee,
+        employee_code: employee.employee_code || "",
+        full_name: employee.full_name || "",
+        email: employee.email || "",
+        role_title: employee.role_title || "",
+        department: employee.department || "",
+        location: employee.location || "",
+        availability_percent: employee.availability_percent ?? 100,
+        active: Number(employee.active) === 1 || employee.active === true,
+        notes: employee.notes || "",
       });
-      setSystemsText((employee.systems || []).join(", "));
     } else {
-      setForm(emptyForm);
-      setSystemsText("");
+      setForm({
+        ...emptyForm,
+        employee_code: nextEmployeeCode || "",
+      });
     }
-  }, [open, employee]);
+  }, [open, employee, nextEmployeeCode]);
 
   if (!open) return null;
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+
     setForm((prev) => ({
       ...prev,
       [name]:
-        ["availability", "qualified", "fully", "expert", "accessGaps", "id"].includes(
-          name
-        )
+        type === "checkbox"
+          ? checked
+          : name === "availability_percent"
           ? Number(value)
           : value,
     }));
@@ -57,16 +75,7 @@ export default function EmployeeFormModal({
 
   function handleSubmit(e) {
     e.preventDefault();
-
-    const payload = {
-      ...form,
-      systems: systemsText
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    };
-
-    onSave(payload);
+    onSave(form);
   }
 
   return (
@@ -75,7 +84,7 @@ export default function EmployeeFormModal({
         <div className="modal-header">
           <div>
             <h2>{mode === "edit" ? "Rediger Ansatt" : "Ny Ansatt"}</h2>
-            <p>{mode === "edit" ? "Oppdater eksisterende rad" : "Opprett ny rad"}</p>
+            <p>{mode === "edit" ? "Oppdater employee" : "Opprett employee"}</p>
           </div>
           <button className="icon-btn" onClick={onClose}>
             ✕
@@ -85,48 +94,65 @@ export default function EmployeeFormModal({
         <form className="employee-form" onSubmit={handleSubmit}>
           <div className="form-grid">
             <label>
-              <span>Employee ID</span>
+              <span>Employee code</span>
               <input
-                name="id"
-                type="number"
-                value={form.id}
+                name="employee_code"
+                value={form.employee_code}
+                readOnly
+                disabled
+              />
+            </label>
+
+            <label>
+              <span>Full name</span>
+              <input
+                name="full_name"
+                value={form.full_name}
                 onChange={handleChange}
                 required
               />
             </label>
 
             <label>
-              <span>Navn</span>
+              <span>Email</span>
               <input
-                name="name"
-                value={form.name}
+                name="email"
+                type="email"
+                value={form.email}
                 onChange={handleChange}
                 required
               />
             </label>
 
             <label>
-              <span>Rolle</span>
+              <span>Role title</span>
               <input
-                name="role"
-                value={form.role}
+                name="role_title"
+                value={form.role_title}
                 onChange={handleChange}
-                required
               />
             </label>
 
             <label>
-              <span>Avdeling</span>
-              <input
+              <span>Department</span>
+              <select
                 name="department"
                 value={form.department}
                 onChange={handleChange}
+                className="form-select"
                 required
-              />
+              >
+                <option value="">Velg avdeling</option>
+                {departmentOptions.map((dep) => (
+                  <option key={dep} value={dep}>
+                    {dep}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>
-              <span>Lokasjon</span>
+              <span>Location</span>
               <input
                 name="location"
                 value={form.location}
@@ -137,74 +163,31 @@ export default function EmployeeFormModal({
             <label>
               <span>Availability %</span>
               <input
-                name="availability"
+                name="availability_percent"
                 type="number"
                 min="0"
                 max="100"
-                value={form.availability}
+                value={form.availability_percent}
                 onChange={handleChange}
               />
             </label>
 
-            <label>
-              <span>Qualified</span>
+            <label className="checkbox-label">
+              <span>Active</span>
               <input
-                name="qualified"
-                type="number"
-                min="0"
-                value={form.qualified}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              <span>Fully</span>
-              <input
-                name="fully"
-                type="number"
-                min="0"
-                value={form.fully}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              <span>Expert</span>
-              <input
-                name="expert"
-                type="number"
-                min="0"
-                value={form.expert}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              <span>Access gaps</span>
-              <input
-                name="accessGaps"
-                type="number"
-                min="0"
-                value={form.accessGaps}
+                name="active"
+                type="checkbox"
+                checked={form.active}
                 onChange={handleChange}
               />
             </label>
 
             <label className="full-width">
-              <span>Service footprint</span>
+              <span>Notes</span>
               <input
-                name="serviceFootprint"
-                value={form.serviceFootprint}
+                name="notes"
+                value={form.notes}
                 onChange={handleChange}
-              />
-            </label>
-
-            <label className="full-width">
-              <span>System qualifications (comma separated)</span>
-              <input
-                value={systemsText}
-                onChange={(e) => setSystemsText(e.target.value)}
-                placeholder="Cisco — score 9, Azure — score 8"
               />
             </label>
           </div>

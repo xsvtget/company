@@ -1,81 +1,70 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "../components/layout/AppShell";
 import EmployeeStats from "../components/employees/EmployeeStats";
 import EmployeeTable from "../components/employees/EmployeeTable";
 import EmployeeSpotlight from "../components/employees/EmployeeSpotlight";
 import EmployeeFormModal from "../components/employees/EmployeeFormModal";
+import {
+  getEmployees,
+  getEmployeeById,
+  createEmployee,
+  updateEmployee,
+  deactivateEmployee,
+} from "../services/employeeService";
 import "../styles/employees.css";
 
-const initialEmployees = [
-  {
-    id: 19,
-    name: "Alexander Fløtre Waaland",
-    department: "Infra",
-    role: "Infrastructure Engineer",
-    location: "Stavanger",
-    availability: 100,
-    qualified: 1,
-    fully: 0,
-    expert: 0,
-    accessGaps: 1,
-    serviceFootprint: "Network as a Service — score 7",
-    systems: ["Network Design — score 9", "Cisco — score 9", "Fortigate — score 7"],
-  },
-  {
-    id: 8,
-    name: "Andreas Thorsen",
-    department: "Infra",
-    role: "Systems Consultant",
-    location: "Bergen",
-    availability: 100,
-    qualified: 1,
-    fully: 0,
-    expert: 0,
-    accessGaps: 1,
-    serviceFootprint: "Identity & Access — score 6",
-    systems: ["Active Directory — score 6"],
-  },
-  {
-    id: 4,
-    name: "Eskil N. Jakobsen",
-    department: "Sales & Marketing",
-    role: "Solution Architect",
-    location: "Oslo",
-    availability: 100,
-    qualified: 2,
-    fully: 2,
-    expert: 2,
-    accessGaps: 0,
-    serviceFootprint: "Presales Enablement — score 10",
-    systems: ["Microsoft 365 — score 10", "Azure — score 9"],
-  },
-  {
-    id: 2,
-    name: "Thomas Hemnes Alveskjær",
-    department: "OPS",
-    role: "Platform Specialist",
-    location: "Oslo",
-    availability: 70,
-    qualified: 6,
-    fully: 2,
-    expert: 5,
-    accessGaps: 4,
-    serviceFootprint: "Cloud Operations — score 22",
-    systems: ["Azure — score 10", "M365 — score 8", "Veeam — score 4"],
-  },
-];
-
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
-  const [selected, setSelected] = useState(initialEmployees[0]);
+  const [selected, setSelected] = useState(null);
+  const [selectedDetails, setSelectedDetails] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("create");
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (selected?.id) {
+      loadEmployeeDetails(selected.id);
+    } else {
+      setSelectedDetails(null);
+    }
+  }, [selected]);
+
+  async function loadEmployees() {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getEmployees();
+      setEmployees(data);
+
+      if (data.length > 0 && !selected) {
+        setSelected(data[0]);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to load employees");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadEmployeeDetails(id) {
+    try {
+      const data = await getEmployeeById(id);
+      setSelectedDetails(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   const departments = useMemo(
-    () => ["all", ...new Set(employees.map((e) => e.department))],
+    () => ["all", ...new Set(employees.map((e) => e.department).filter(Boolean))],
     [employees]
   );
 
@@ -84,10 +73,11 @@ export default function EmployeesPage() {
       const q = search.toLowerCase().trim();
 
       const matchesSearch =
-        employee.name.toLowerCase().includes(q) ||
-        employee.role.toLowerCase().includes(q) ||
-        employee.location.toLowerCase().includes(q) ||
-        String(employee.id).includes(q);
+        employee.full_name?.toLowerCase().includes(q) ||
+        employee.employee_code?.toLowerCase().includes(q) ||
+        employee.email?.toLowerCase().includes(q) ||
+        employee.role_title?.toLowerCase().includes(q) ||
+        employee.location?.toLowerCase().includes(q);
 
       const matchesDepartment =
         department === "all" || employee.department === department;
@@ -96,9 +86,6 @@ export default function EmployeesPage() {
     });
   }, [employees, search, department]);
 
-  const spotlight =
-    filteredEmployees.find((e) => e.id === selected?.id) || filteredEmployees[0] || null;
-
   function openCreateModal() {
     setModalMode("create");
     setEditingEmployee(null);
@@ -106,29 +93,74 @@ export default function EmployeesPage() {
   }
 
   function openEditModal(employee) {
-    setSelected(employee);
     setModalMode("edit");
     setEditingEmployee(employee);
     setModalOpen(true);
   }
 
-  function handleSave(employeeData) {
-    if (modalMode === "edit") {
-      setEmployees((prev) =>
-        prev.map((employee) =>
-          employee.id === employeeData.id ? employeeData : employee
-        )
-      );
-      setSelected(employeeData);
-    } else {
-      setEmployees((prev) => [employeeData, ...prev]);
-      setSelected(employeeData);
-    }
+  async function handleSave(formData) {
+    try {
+      if (modalMode === "edit" && editingEmployee) {
+        await updateEmployee(editingEmployee.id, {
+          full_name: formData.full_name,
+          email: formData.email,
+          role_title: formData.role_title,
+          department: formData.department,
+          location: formData.location,
+          availability_percent: Number(formData.availability_percent),
+          active: formData.active,
+          notes: formData.notes,
+        });
+      } else {
+        await createEmployee({
+          employee_code: formData.employee_code,
+          full_name: formData.full_name,
+          email: formData.email,
+          role_title: formData.role_title,
+          department: formData.department,
+          location: formData.location,
+          availability_percent: Number(formData.availability_percent),
+          active: formData.active,
+          notes: formData.notes,
+        });
+      }
 
-    setModalOpen(false);
-    setEditingEmployee(null);
+      setModalOpen(false);
+      setEditingEmployee(null);
+      await loadEmployees();
+    } catch (err) {
+      alert(err.message || "Save failed");
+    }
   }
 
+  async function handleDeactivate(employee) {
+    const confirmed = window.confirm(
+      `Deactivate ${employee.full_name}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deactivateEmployee(employee.id);
+      await loadEmployees();
+
+      if (selected?.id === employee.id) {
+        setSelected(null);
+        setSelectedDetails(null);
+      }
+    } catch (err) {
+      alert(err.message || "Failed to deactivate employee");
+    }
+  }
+  const nextEmployeeCode = useMemo(() => {
+    const maxNumber = employees.reduce((max, employee) => {
+      const match = String(employee.employee_code || "").match(/\d+/);
+      const number = match ? Number(match[0]) : 0;
+      return number > max ? number : max;
+    }, 0);
+
+    return `EMP${String(maxNumber + 1).padStart(3, "0")}`;
+  }, [employees]);
   return (
     <AppShell>
       <section className="page-header">
@@ -166,15 +198,22 @@ export default function EmployeesPage() {
         </select>
       </section>
 
-      <section className="content-grid">
-        <EmployeeTable
-          employees={filteredEmployees}
-          selectedEmployeeId={spotlight?.id}
-          onSelect={setSelected}
-          onEdit={openEditModal}
-        />
-        <EmployeeSpotlight employee={spotlight} />
-      </section>
+      {loading && <p>Loading employees...</p>}
+      {error && <p>{error}</p>}
+
+      {!loading && !error && (
+        <section className="content-grid">
+          <EmployeeTable
+            employees={filteredEmployees}
+            selectedEmployeeId={selected?.id}
+            onSelect={setSelected}
+            onEdit={openEditModal}
+            onDeactivate={handleDeactivate}
+          />
+
+          <EmployeeSpotlight employee={selectedDetails || selected} />
+        </section>
+      )}
 
       <EmployeeFormModal
         open={modalOpen}
@@ -182,6 +221,7 @@ export default function EmployeesPage() {
         employee={editingEmployee}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+        nextEmployeeCode={nextEmployeeCode}
       />
     </AppShell>
   );
