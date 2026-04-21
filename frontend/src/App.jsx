@@ -1,7 +1,5 @@
 import EmployeesPage from "./pages/EmployeesPage";
 
-function App() {
+export default function App() {
   return <EmployeesPage />;
 }
-
-export default App;

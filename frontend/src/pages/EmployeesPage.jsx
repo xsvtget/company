@@ -1,4 +1,9 @@
 import { useMemo, useState } from "react";
+import AppShell from "../components/layout/AppShell";
+import EmployeeStats from "../components/employees/EmployeeStats";
+import EmployeeTable from "../components/employees/EmployeeTable";
+import EmployeeSpotlight from "../components/employees/EmployeeSpotlight";
+import EmployeeFormModal from "../components/employees/EmployeeFormModal";
 import "../styles/employees.css";
 
 const initialEmployees = [
@@ -14,11 +19,7 @@ const initialEmployees = [
     expert: 0,
     accessGaps: 1,
     serviceFootprint: "Network as a Service — score 7",
-    systems: [
-      "Network Design — score 9",
-      "Cisco — score 9",
-      "Fortigate — score 7",
-    ],
+    systems: ["Network Design — score 9", "Cisco — score 9", "Fortigate — score 7"],
   },
   {
     id: 8,
@@ -69,19 +70,24 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
   const [selected, setSelected] = useState(initialEmployees[0]);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editData, setEditData] = useState(initialEmployees[0]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create");
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
-  const departments = useMemo(() => {
-    return ["all", ...new Set(employees.map((e) => e.department))];
-  }, [employees]);
+  const departments = useMemo(
+    () => ["all", ...new Set(employees.map((e) => e.department))],
+    [employees]
+  );
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
+      const q = search.toLowerCase().trim();
+
       const matchesSearch =
-        employee.name.toLowerCase().includes(search.toLowerCase()) ||
-        employee.role.toLowerCase().includes(search.toLowerCase()) ||
-        employee.location.toLowerCase().includes(search.toLowerCase());
+        employee.name.toLowerCase().includes(q) ||
+        employee.role.toLowerCase().includes(q) ||
+        employee.location.toLowerCase().includes(q) ||
+        String(employee.id).includes(q);
 
       const matchesDepartment =
         department === "all" || employee.department === department;
@@ -90,328 +96,93 @@ export default function EmployeesPage() {
     });
   }, [employees, search, department]);
 
-  const spotlight = selected || filteredEmployees[0] || employees[0];
+  const spotlight =
+    filteredEmployees.find((e) => e.id === selected?.id) || filteredEmployees[0] || null;
 
-  const openEditModal = (employee) => {
-    setEditData(employee);
-    setIsEditOpen(true);
-  };
+  function openCreateModal() {
+    setModalMode("create");
+    setEditingEmployee(null);
+    setModalOpen(true);
+  }
 
-  const saveEdit = () => {
-    const updated = employees.map((employee) =>
-      employee.id === editData.id ? editData : employee
-    );
-    setEmployees(updated);
-    setSelected(editData);
-    setIsEditOpen(false);
-  };
+  function openEditModal(employee) {
+    setSelected(employee);
+    setModalMode("edit");
+    setEditingEmployee(employee);
+    setModalOpen(true);
+  }
 
-  const totalPeople = employees.length;
-  const totalQualified = employees.reduce((sum, e) => sum + e.qualified, 0);
-  const totalExperts = employees.reduce((sum, e) => sum + e.expert, 0);
-  const totalGaps = employees.reduce((sum, e) => sum + e.accessGaps, 0);
+  function handleSave(employeeData) {
+    if (modalMode === "edit") {
+      setEmployees((prev) =>
+        prev.map((employee) =>
+          employee.id === employeeData.id ? employeeData : employee
+        )
+      );
+      setSelected(employeeData);
+    } else {
+      setEmployees((prev) => [employeeData, ...prev]);
+      setSelected(employeeData);
+    }
+
+    setModalOpen(false);
+    setEditingEmployee(null);
+  }
 
   return (
-    <div className="employees-page">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-logo">EP</div>
-          <div>
-            <p className="brand-top">Competence & Risk</p>
-            <h2>Workbench</h2>
-          </div>
+    <AppShell>
+      <section className="page-header">
+        <div>
+          <h1>People</h1>
+          <p>Ansatte, kapasitet og access-gaps</p>
         </div>
 
-        <nav className="nav-menu">
-          <button className="nav-item">Oversikt</button>
-          <button className="nav-item">Services</button>
-          <button className="nav-item active">People</button>
-          <button className="nav-item">Systems</button>
-        </nav>
-
-        <div className="sidebar-card">
-          <h3>Runtime</h3>
-          <p>Employees page mockup with search, spotlight and edit modal.</p>
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <div className="page-header">
-          <div>
-            <h1>People</h1>
-            <p>Ансати, капасітет, кваліфікації та access gaps.</p>
-          </div>
-          <button className="primary-btn">+ New employee</button>
-        </div>
-
-        <div className="stats-grid">
-          <div className="stat-card">
-            <span>People</span>
-            <strong>{totalPeople}</strong>
-          </div>
-          <div className="stat-card">
-            <span>Qualified services</span>
-            <strong>{totalQualified}</strong>
-          </div>
-          <div className="stat-card">
-            <span>Expert footprints</span>
-            <strong>{totalExperts}</strong>
-          </div>
-          <div className="stat-card">
-            <span>Access gaps</span>
-            <strong>{totalGaps}</strong>
-          </div>
-        </div>
-
-        <div className="toolbar">
+        <div className="header-actions">
           <input
-            type="text"
-            placeholder="Пошук по імені, ролі або локації"
+            className="search-input"
+            placeholder="Søk på ansatte..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="search-input"
           />
-
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            className="department-select"
-          >
-            {departments.map((dep) => (
-              <option key={dep} value={dep}>
-                {dep === "all" ? "Всі відділи" : dep}
-              </option>
-            ))}
-          </select>
+          <button className="primary-btn" onClick={openCreateModal}>
+            Ny ansatt
+          </button>
         </div>
+      </section>
 
-        <div className="content-grid">
-          <section className="table-card">
-            <div className="card-header">
-              <h3>Ansatte og kapasitet</h3>
-              <p>Краща версія таблиці з spotlight і drilldown.</p>
-            </div>
+      <EmployeeStats employees={employees} />
 
-            <div className="employees-table">
-              <div className="table-head">
-                <div>Ansatt</div>
-                <div>Avd.</div>
-                <div>Avail</div>
-                <div>Qualified</div>
-                <div>Fully</div>
-                <div>Expert</div>
-                <div>Gaps</div>
-                <div>Actions</div>
-              </div>
+      <section className="toolbar">
+        <select
+          className="department-select"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+        >
+          {departments.map((dep) => (
+            <option key={dep} value={dep}>
+              {dep === "all" ? "Alle avdelinger" : dep}
+            </option>
+          ))}
+        </select>
+      </section>
 
-              {filteredEmployees.map((employee) => (
-                <div
-                  key={employee.id}
-                  className={`table-row ${
-                    spotlight?.id === employee.id ? "selected-row" : ""
-                  }`}
-                >
-                  <div className="employee-main">
-                    <button
-                      className="employee-name-btn"
-                      onClick={() => setSelected(employee)}
-                    >
-                      <strong>{employee.name}</strong>
-                      <span>
-                        #{employee.id} • {employee.role}
-                      </span>
-                    </button>
-                  </div>
-                  <div>{employee.department}</div>
-                  <div>{employee.availability}%</div>
-                  <div>{employee.qualified}</div>
-                  <div>{employee.fully}</div>
-                  <div>{employee.expert}</div>
-                  <div>{employee.accessGaps}</div>
-                  <div className="row-actions">
-                    <button
-                      className="secondary-btn small"
-                      onClick={() => setSelected(employee)}
-                    >
-                      View
-                    </button>
-                    <button
-                      className="secondary-btn small"
-                      onClick={() => openEditModal(employee)}
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+      <section className="content-grid">
+        <EmployeeTable
+          employees={filteredEmployees}
+          selectedEmployeeId={spotlight?.id}
+          onSelect={setSelected}
+          onEdit={openEditModal}
+        />
+        <EmployeeSpotlight employee={spotlight} />
+      </section>
 
-          <section className="spotlight-card">
-            <div className="card-header">
-              <h3>People spotlight</h3>
-              <p>Хто зараз у фокусі і де в нього strongest fit.</p>
-            </div>
-
-            <div className="spotlight-box">
-              <h4>{spotlight.name}</h4>
-              <p>
-                #{spotlight.id} • {spotlight.department} • Availability{" "}
-                {spotlight.availability}%
-              </p>
-            </div>
-
-            <div className="pill-row">
-              <span className="pill">Qualified: {spotlight.qualified}</span>
-              <span className="pill">Fully: {spotlight.fully}</span>
-              <span className="pill">Experts: {spotlight.expert}</span>
-              <span className="pill">Gaps: {spotlight.accessGaps}</span>
-            </div>
-
-            <div className="info-box">
-              <h4>Service footprint</h4>
-              <p>{spotlight.serviceFootprint}</p>
-            </div>
-
-            <div className="info-box">
-              <h4>System qualifications</h4>
-              <ul>
-                {spotlight.systems.map((system) => (
-                  <li key={system}>{system}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <aside className="drilldown-panel">
-        <div className="card-header">
-          <h3>People drilldown</h3>
-          <p>Кваліфікації, service footprint і access profile.</p>
-        </div>
-
-        <div className="spotlight-box">
-          <h4>{spotlight.name}</h4>
-          <p>
-            #{spotlight.id} • {spotlight.department} • Availability{" "}
-            {spotlight.availability}%
-          </p>
-        </div>
-
-        <div className="pill-row">
-          <span className="pill">Qualified services: {spotlight.qualified}</span>
-          <span className="pill">Fully capable: {spotlight.fully}</span>
-          <span className="pill">Experts: {spotlight.expert}</span>
-          <span className="pill">Access gaps: {spotlight.accessGaps}</span>
-        </div>
-
-        <div className="info-box">
-          <h4>Service footprint</h4>
-          <p>{spotlight.serviceFootprint}</p>
-        </div>
-
-        <div className="info-box">
-          <h4>System qualifications</h4>
-          <ul>
-            {spotlight.systems.map((system) => (
-              <li key={system}>{system}</li>
-            ))}
-          </ul>
-        </div>
-      </aside>
-
-      {isEditOpen && (
-        <div className="modal-overlay">
-          <div className="edit-modal">
-            <div className="modal-header">
-              <div>
-                <h3>Редагувати працівника</h3>
-                <p>Оновити дані працівника.</p>
-              </div>
-              <button className="close-btn" onClick={() => setIsEditOpen(false)}>
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-grid">
-              <div>
-                <label>Employee ID</label>
-                <input value={editData.id} disabled />
-              </div>
-
-              <div>
-                <label>Name</label>
-                <input
-                  value={editData.name}
-                  onChange={(e) =>
-                    setEditData({ ...editData, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label>Role</label>
-                <input
-                  value={editData.role}
-                  onChange={(e) =>
-                    setEditData({ ...editData, role: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label>Department</label>
-                <input
-                  value={editData.department}
-                  onChange={(e) =>
-                    setEditData({ ...editData, department: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label>Location</label>
-                <input
-                  value={editData.location}
-                  onChange={(e) =>
-                    setEditData({ ...editData, location: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label>Availability %</label>
-                <input
-                  type="number"
-                  value={editData.availability}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      availability: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button className="danger-btn">Delete</button>
-              <div className="modal-right-actions">
-                <button
-                  className="secondary-btn"
-                  onClick={() => setIsEditOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button className="primary-btn" onClick={saveEdit}>
-                  Save changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <EmployeeFormModal
+        open={modalOpen}
+        mode={modalMode}
+        employee={editingEmployee}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+      />
+    </AppShell>
   );
 }
