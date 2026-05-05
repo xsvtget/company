@@ -88,10 +88,30 @@ const deactivateService = async (req, res) => {
   }
 };
 
+const getServiceDrilldown = async (req, res) => {
+  try {
+    const drilldown = await servicesService.getServiceDrilldown(req.params.id);
+
+    if (!drilldown) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.json(drilldown);
+  } catch (error) {
+    console.error("getServiceDrilldown error:", error);
+    res.status(500).json({
+      error: error.message || "Unknown server error",
+      code: error.code || null,
+      sqlMessage: error.sqlMessage || null
+    });
+  }
+};
+
 module.exports = {
   createService,
   getServices,
   getServiceById,
+  getServiceDrilldown,
   updateService,
   deactivateService
 };

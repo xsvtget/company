@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import QualificationModal from "../components/employees/QualificationModal";
+import "../styles/qualificationModal.css";
+import { getQualificationsByEmployee } from "../services/qualificationService";
 import {
   getEmployees,
   getEmployeeById,
@@ -22,6 +25,7 @@ const emptyForm = {
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [qualificationModalOpen, setQualificationModalOpen] = useState(false);
   const [details, setDetails] = useState(null);
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
@@ -30,6 +34,19 @@ export default function EmployeesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [employeeQualifications, setEmployeeQualifications] = useState([]);
+
+
+
+  useEffect(() => {
+    if (!selected?.id) return;
+
+    getQualificationsByEmployee(selected.id)
+      .then((rows) => {
+        setEmployeeQualifications(rows);
+      })
+      .catch(() => setEmployeeQualifications([]));
+  }, [selected]);
 
   useEffect(() => {
     loadEmployees();
@@ -162,10 +179,24 @@ export default function EmployeesPage() {
 
         <p className="side-title">HOVEDFLATER</p>
 
-        {["Oversikt", "Services", "People", "Systems", "Coverage Matrix", "Actions & Reviews", "Data Editor", "Datakvalitet", "Audit-logg"].map((item) => (
-          <button key={item} className={`nav-link ${item === "People" ? "active" : ""}`}>
-            <span>{item}</span>
-            <small>{item === "Oversikt" ? "Default" : "View"}</small>
+        {[
+          { label: "Oversikt", path: "#/people" },
+          { label: "Services", path: "#/services" },
+          { label: "People", path: "#/people" },
+          { label: "Systems", path: "#/systems" },
+          { label: "Service/System Mapping", path: "#/mapping" },
+          { label: "Actions & Reviews", path: "#/people" },
+          { label: "Data Editor", path: "#/people" },
+          { label: "Datakvalitet", path: "#/people" },
+          { label: "Audit-logg", path: "#/people" },
+        ].map((item) => (
+          <button
+            key={item.label}
+            onClick={() => (window.location.hash = item.path)}
+            className={`nav-link ${item.label === "People" ? "active" : ""}`}
+          >
+            <span>{item.label}</span>
+            <small>{item.label === "Oversikt" ? "Default" : "View"}</small>
           </button>
         ))}
 
@@ -291,11 +322,31 @@ export default function EmployeesPage() {
                   Sterkeste tjenestetilknytninger:<br />
                   · {spotlight.role_title || "Role not set"} — score {spotlight.availability_percent ?? 100}
                 </p>
+                
+                <div className="qualification-list">
+                  <h4>Qualifications</h4>
+
+                  {employeeQualifications.length === 0 ? (
+                    <p className="small-text">Ingen qualifications registrert.</p>
+                  ) : (
+                    employeeQualifications.map((q) => (
+                      <div key={q.id} className="qualification-item">
+                        <strong>{q.system_name || q.name || `System ${q.system_id}`}</strong>
+                        <span>
+                          {q.qualification_level} · score {q.total_score}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+
 
                 <div className="spotlight-actions">
                   <button className="blue">Åpne drilldown</button>
                   <button onClick={() => openEdit(spotlight)}>Rediger</button>
-                  <button>Ny qualification</button>
+                  <button onClick={() => setQualificationModalOpen(true)}>
+                    Ny qualification
+                  </button>
                 </div>
 
                 <button className="danger" onClick={() => handleDeactivate(spotlight)}>
@@ -361,6 +412,14 @@ export default function EmployeesPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {qualificationModalOpen && selected && (
+        <QualificationModal
+          employee={selected}
+          onClose={() => setQualificationModalOpen(false)}
+          onSaved={loadEmployees}
+        />
       )}
     </div>
   );

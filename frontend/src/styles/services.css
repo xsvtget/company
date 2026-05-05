@@ -1,0 +1,236 @@
+.services-main {
+  padding: 28px;
+}
+
+.services-panel {
+  min-height: calc(100vh - 175px);
+  max-height: calc(100vh - 175px);
+  overflow: auto;
+}
+
+.services-table {
+  min-width: 1550px;
+}
+
+.services-table-header,
+.services-table-row {
+  display: grid;
+  grid-template-columns: 2.2fr 0.8fr 1fr 0.7fr 0.7fr 0.7fr 1fr 0.7fr 1.2fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.services-table-header {
+  color: #a8b7d2;
+  font-size: 12px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.services-table-row {
+  padding: 13px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  font-size: 13px;
+}
+
+.services-table-row:hover,
+.services-table-row.selected {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.services-table-row strong {
+  display: block;
+}
+
+.services-table-row small {
+  display: block;
+  color: #8498b8;
+  margin-top: 4px;
+}
+
+.services-table-row .row-buttons button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: white;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.service-drawer {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 520px !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  z-index: 999 !important;
+  padding: 24px !important;
+  background: #071020 !important;
+  border-left: 1px solid rgba(148, 163, 184, 0.18) !important;
+  border-radius: 0 !important;
+  box-shadow: -30px 0 80px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: none !important;
+}
+
+.drilldown-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.drilldown-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.drilldown-head p {
+  margin: 6px 0 0;
+  color: #8fa3c0;
+}
+
+.drilldown-head button,
+.drill-edit {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+}
+
+.drilldown-head button {
+  width: 36px;
+  height: 36px;
+}
+
+.drill-card {
+  padding: 18px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.drill-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.drill-card p {
+  margin: 4px 0;
+  color: #a7b7d2;
+  font-size: 13px;
+}
+
+.drill-edit {
+  margin-top: 8px;
+  padding: 10px 14px;
+}
+
+.muted {
+  color: #8fa3c0;
+}
+
+.readonly-input {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.risk-pill,
+.spof-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.risk-red {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.risk-yellow {
+  background: rgba(234, 179, 8, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.risk-green {
+  background: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.risk-n\/a {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.spof-yes {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.spof-no {
+  background: rgba(16, 185, 129, 0.18);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.maturity-cell {
+  max-width: 150px;
+}
+
+.maturity-bar {
+  width: 120px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+
+.maturity-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #2ea8ff;
+}
+
+.maturity-cell small {
+  display: block;
+  margin-top: 4px;
+  color: #8fa3c0;
+  font-size: 11px;
+}
+
+.drill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0 22px;
+}
+
+.drill-chips span {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #b9c8e6;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.drill-maturity .maturity-bar {
+  width: 100%;
+  height: 12px;
+}

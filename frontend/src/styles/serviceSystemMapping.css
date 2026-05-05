@@ -1,0 +1,144 @@
+.mapping-main {
+  padding: 28px;
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: minmax(380px, 0.8fr) minmax(620px, 1.4fr);
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.mapping-left,
+.mapping-right {
+  min-height: calc(100vh - 150px);
+}
+
+.big-select,
+.mapping-form input,
+.mapping-form select {
+  width: 100%;
+  color: white;
+  border-radius: 13px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.selected-service-card {
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(30, 41, 59, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.selected-service-card h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.selected-service-card p {
+  margin: 0 0 12px;
+  color: #8fa3c0;
+}
+
+.selected-service-card span {
+  display: inline-block;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.16);
+  color: #bfdbfe;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.mapping-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mapping-form h3,
+.mapping-form .wide {
+  grid-column: 1 / -1;
+}
+
+.mapping-form h3 {
+  margin: 8px 0 0;
+}
+
+.mapping-form label {
+  color: #a9bad5;
+  font-size: 13px;
+}
+
+.mapping-form input,
+.mapping-form select {
+  margin-top: 7px;
+}
+
+.mapping-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mapping-actions button,
+.mapping-table-row button {
+  color: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.mapping-table {
+  min-width: 780px;
+}
+
+.mapping-table-header,
+.mapping-table-row {
+  display: grid;
+  grid-template-columns: 1.8fr 0.9fr 0.7fr 0.7fr 1.4fr 1.3fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.mapping-table-header {
+  color: #a8b7d2;
+  font-size: 12px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.mapping-table-row {
+  padding: 13px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  font-size: 13px;
+}
+
+.mapping-table-row:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.mapping-table-row strong,
+.mapping-table-row small {
+  display: block;
+}
+
+.mapping-table-row small {
+  color: #8498b8;
+  margin-top: 4px;
+}
+
+.empty-state {
+  color: #8fa3c0;
+  padding: 18px 12px;
+}
+
+@media (max-width: 1100px) {
+  .mapping-grid {
+    grid-template-columns: 1fr;
+  }
+}

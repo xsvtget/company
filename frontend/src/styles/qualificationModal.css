@@ -1,0 +1,12 @@
+.qualification-modal {
+  width: min(1180px, 92vw);
+}
+
+.qualification-modal .form-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.readonly-input {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

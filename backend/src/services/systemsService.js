@@ -1,17 +1,18 @@
 const pool = require('../config/db');
 
 const createSystem = async (data) => {
-  const {
-    system_code,
-    name,
-    owner_name,
-    business_owner,
-    technical_owner,
-    environment,
-    sensitivity,
-    active,
-    notes
-  } = data;
+  const safe = (value, fallback = null) =>
+    value === undefined || value === "" ? fallback : value;
+
+  const systemCode = safe(data.system_code);
+  const systemName = safe(data.name || data.system_name);
+  const ownerName = safe(data.owner_name);
+  const businessOwner = safe(data.business_owner);
+  const technicalOwner = safe(data.technical_owner);
+  const environment = safe(data.environment, "PROD");
+  const sensitivity = safe(data.sensitivity, "MEDIUM");
+  const active = data.active === undefined ? true : data.active;
+  const notes = safe(data.notes || data.comments);
 
   const [result] = await pool.execute(
     `
@@ -29,15 +30,15 @@ const createSystem = async (data) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
-      system_code,
-      name,
-      owner_name ?? null,
-      business_owner ?? null,
-      technical_owner ?? null,
-      environment ?? 'PROD',
-      sensitivity ?? 'MEDIUM',
-      active ?? true,
-      notes ?? null
+      systemCode,
+      systemName,
+      ownerName,
+      businessOwner,
+      technicalOwner,
+      environment,
+      sensitivity,
+      active,
+      notes
     ]
   );
 
