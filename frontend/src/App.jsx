@@ -1,6 +1,5 @@
-import SystemsPage from "./pages/SystemsPage";
-
+import EmployeesPage from "./pages/EmployeesPage";
 
 export default function App() {
-  return <SystemsPage />;
+  return <EmployeesPage />;
 }

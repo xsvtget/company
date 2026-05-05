@@ -1,9 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import AppShell from "../components/layout/AppShell";
-import EmployeeStats from "../components/employees/EmployeeStats";
-import EmployeeTable from "../components/employees/EmployeeTable";
-import EmployeeSpotlight from "../components/employees/EmployeeSpotlight";
-import EmployeeFormModal from "../components/employees/EmployeeFormModal";
 import {
   getEmployees,
   getEmployeeById,
@@ -11,30 +6,44 @@ import {
   updateEmployee,
   deactivateEmployee,
 } from "../services/employeeService";
-import "../styles/employees.css";
+
+const emptyForm = {
+  employee_code: "",
+  full_name: "",
+  email: "",
+  role_title: "",
+  department: "",
+  location: "",
+  availability_percent: 100,
+  active: true,
+  notes: "",
+};
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [details, setDetails] = useState(null);
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
-  const [selected, setSelected] = useState(null);
-  const [selectedDetails, setSelectedDetails] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create");
-  const [editingEmployee, setEditingEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     loadEmployees();
   }, []);
 
   useEffect(() => {
-    if (selected?.id) {
-      loadEmployeeDetails(selected.id);
-    } else {
-      setSelectedDetails(null);
+    if (!selected?.id) {
+      setDetails(null);
+      return;
     }
+
+    getEmployeeById(selected.id)
+      .then(setDetails)
+      .catch(() => setDetails(null));
   }, [selected]);
 
   async function loadEmployees() {
@@ -43,186 +52,316 @@ export default function EmployeesPage() {
       setError("");
       const data = await getEmployees();
       setEmployees(data);
-
-      if (data.length > 0 && !selected) {
-        setSelected(data[0]);
-      }
+      setSelected((current) => current || data[0] || null);
     } catch (err) {
-      setError(err.message || "Failed to load employees");
+      setError(err.message || "Could not load employees");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadEmployeeDetails(id) {
-    try {
-      const data = await getEmployeeById(id);
-      setSelectedDetails(data);
-    } catch (err) {
-      console.error(err);
-    }
-  }
+  const departments = useMemo(() => {
+    return ["all", ...new Set(employees.map((e) => e.department).filter(Boolean))];
+  }, [employees]);
 
-  const departments = useMemo(
-    () => ["all", ...new Set(employees.map((e) => e.department).filter(Boolean))],
-    [employees]
-  );
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const q = search.toLowerCase().trim();
-
+    return employees.filter((e) => {
       const matchesSearch =
-        employee.full_name?.toLowerCase().includes(q) ||
-        employee.employee_code?.toLowerCase().includes(q) ||
-        employee.email?.toLowerCase().includes(q) ||
-        employee.role_title?.toLowerCase().includes(q) ||
-        employee.location?.toLowerCase().includes(q);
+        !q ||
+        e.full_name?.toLowerCase().includes(q) ||
+        e.employee_code?.toLowerCase().includes(q) ||
+        e.email?.toLowerCase().includes(q) ||
+        e.role_title?.toLowerCase().includes(q);
 
-      const matchesDepartment =
-        department === "all" || employee.department === department;
+      const matchesDepartment = department === "all" || e.department === department;
 
       return matchesSearch && matchesDepartment;
     });
   }, [employees, search, department]);
 
-  function openCreateModal() {
-    setModalMode("create");
-    setEditingEmployee(null);
+  const nextEmployeeCode = useMemo(() => {
+    const max = employees.reduce((highest, e) => {
+      const number = Number(String(e.employee_code || "").replace(/\D/g, ""));
+      return Number.isFinite(number) && number > highest ? number : highest;
+    }, 0);
+
+    return `EMP${String(max + 1).padStart(3, "0")}`;
+  }, [employees]);
+
+  function openCreate() {
+    setEditing(null);
+    setForm({ ...emptyForm, employee_code: nextEmployeeCode });
     setModalOpen(true);
   }
 
-  function openEditModal(employee) {
-    setModalMode("edit");
-    setEditingEmployee(employee);
+  function openEdit(employee) {
+    setEditing(employee);
+    setForm({
+      employee_code: employee.employee_code || "",
+      full_name: employee.full_name || "",
+      email: employee.email || "",
+      role_title: employee.role_title || "",
+      department: employee.department || "",
+      location: employee.location || "",
+      availability_percent: employee.availability_percent ?? 100,
+      active: employee.active ?? true,
+      notes: employee.notes || "",
+    });
     setModalOpen(true);
   }
 
-  async function handleSave(formData) {
+  async function saveEmployee(event) {
+    event.preventDefault();
+
+    const payload = {
+      ...form,
+      availability_percent: Number(form.availability_percent),
+      active: Boolean(form.active),
+    };
+
     try {
-      if (modalMode === "edit" && editingEmployee) {
-        await updateEmployee(editingEmployee.id, {
-          full_name: formData.full_name,
-          email: formData.email,
-          role_title: formData.role_title,
-          department: formData.department,
-          location: formData.location,
-          availability_percent: Number(formData.availability_percent),
-          active: formData.active,
-          notes: formData.notes,
-        });
+      if (editing) {
+        await updateEmployee(editing.id, payload);
       } else {
-        await createEmployee({
-          employee_code: formData.employee_code,
-          full_name: formData.full_name,
-          email: formData.email,
-          role_title: formData.role_title,
-          department: formData.department,
-          location: formData.location,
-          availability_percent: Number(formData.availability_percent),
-          active: formData.active,
-          notes: formData.notes,
-        });
+        await createEmployee(payload);
       }
 
       setModalOpen(false);
-      setEditingEmployee(null);
       await loadEmployees();
     } catch (err) {
-      alert(err.message || "Save failed");
+      alert(err.message || "Could not save employee");
     }
   }
 
   async function handleDeactivate(employee) {
-    const confirmed = window.confirm(
-      `Deactivate ${employee.full_name}?`
-    );
-
+    const confirmed = window.confirm(`Deactivate ${employee.full_name}?`);
     if (!confirmed) return;
 
     try {
       await deactivateEmployee(employee.id);
       await loadEmployees();
-
-      if (selected?.id === employee.id) {
-        setSelected(null);
-        setSelectedDetails(null);
-      }
     } catch (err) {
-      alert(err.message || "Failed to deactivate employee");
+      alert(err.message || "Could not deactivate employee");
     }
   }
-  const nextEmployeeCode = useMemo(() => {
-    const maxNumber = employees.reduce((max, employee) => {
-      const match = String(employee.employee_code || "").match(/\d+/);
-      const number = match ? Number(match[0]) : 0;
-      return number > max ? number : max;
-    }, 0);
 
-    return `EMP${String(maxNumber + 1).padStart(3, "0")}`;
-  }, [employees]);
+  const spotlight = details || selected;
+
   return (
-    <AppShell>
-      <section className="page-header">
-        <div>
-          <h1>People</h1>
-          <p>Ansatte, kapasitet og access-gaps</p>
+    <div className="workbench">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-logo">EP</div>
+          <div>
+            <h2>Competence & Risk Workbench</h2>
+            <p>v2.3 · editable · import wizard · bulk edit</p>
+          </div>
         </div>
 
-        <div className="header-actions">
-          <input
-            className="search-input"
-            placeholder="Søk på ansatte..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button className="primary-btn" onClick={openCreateModal}>
-            Ny ansatt
+        <p className="side-title">HOVEDFLATER</p>
+
+        {["Oversikt", "Services", "People", "Systems", "Coverage Matrix", "Actions & Reviews", "Data Editor", "Datakvalitet", "Audit-logg"].map((item) => (
+          <button key={item} className={`nav-link ${item === "People" ? "active" : ""}`}>
+            <span>{item}</span>
+            <small>{item === "Oversikt" ? "Default" : "View"}</small>
           </button>
+        ))}
+
+        <div className="runtime-card">
+          <h3>RUNTIME</h3>
+          <p>Denne versjonen kombinerer moderne GUI, explainable risk, inline-redigering, direkte .xlsx-import, relasjonsoppdatering, audit-logg og bulk-redigering.</p>
+          <button>Eksporter JSON</button>
+          <button>Importer JSON</button>
+          <button className="warning">Reset til seed</button>
         </div>
-      </section>
 
-      <EmployeeStats employees={employees} />
+        <div className="news-card">
+          <h3>NYHETER I V2.3</h3>
+          <p>1) Direkte .xlsx-import i browser<br />2) Import-wizard med preview og validering<br />3) Bulk edit for qualifications/access<br />4) Audit-logg<br />5) CSV-eksport per datasett</p>
+        </div>
+      </aside>
 
-      <section className="toolbar">
-        <select
-          className="department-select"
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-        >
-          {departments.map((dep) => (
-            <option key={dep} value={dep}>
-              {dep === "all" ? "Alle avdelinger" : dep}
-            </option>
-          ))}
-        </select>
-      </section>
+      <main className="main">
+        <header className="topbar">
+          <div>
+            <h1>People</h1>
+            <p>Ansatte, kapasitet og access-gaps</p>
+          </div>
 
-      {loading && <p>Loading employees...</p>}
-      {error && <p>{error}</p>}
+          <div className="top-actions">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Søk på ansatte, tjenester, systemer"
+            />
+            <button>Datakvalitet</button>
+            <button>Audit-logg</button>
+            <button className="blue">Data Editor</button>
+          </div>
+        </header>
 
-      {!loading && !error && (
+        <div className="toolbar">
+          <select value={department} onChange={(e) => setDepartment(e.target.value)}>
+            {departments.map((dep) => (
+              <option key={dep} value={dep}>
+                {dep === "all" ? "Alle avdelinger" : dep}
+              </option>
+            ))}
+          </select>
+
+          <div>
+            <button className="blue" onClick={openCreate}>Ny ansatt</button>
+            <button>Ny qualification</button>
+            <button>Ny access</button>
+          </div>
+        </div>
+
         <section className="content-grid">
-          <EmployeeTable
-            employees={filteredEmployees}
-            selectedEmployeeId={selected?.id}
-            onSelect={setSelected}
-            onEdit={openEditModal}
-            onDeactivate={handleDeactivate}
-          />
+          <div className="panel table-panel">
+            <div className="panel-head">
+              <h3>Ansatte og kapasitet</h3>
+              <p>Hvor mye reell tjenestedekning hver person gir</p>
+            </div>
 
-          <EmployeeSpotlight employee={selectedDetails || selected} />
+            {loading && <p className="status">Loading employees...</p>}
+            {error && <p className="error">{error}</p>}
+
+            {!loading && !error && (
+              <div className="people-table">
+                <div className="table-header">
+                  <span>Ansatt</span>
+                  <span>Avd.</span>
+                  <span>Avail</span>
+                  <span>Qualified</span>
+                  <span>Fully</span>
+                  <span>Expert</span>
+                  <span>Access gaps</span>
+                  <span></span>
+                </div>
+
+                {filtered.map((employee) => (
+                  <div
+                    key={employee.id}
+                    className={`table-row ${selected?.id === employee.id ? "selected" : ""}`}
+                    onClick={() => setSelected(employee)}
+                  >
+                    <span>
+                      <strong>{employee.full_name}</strong>
+                      <small>{employee.employee_code}</small>
+                    </span>
+                    <span>{employee.department || "–"}</span>
+                    <span>{employee.availability_percent ?? 100}%</span>
+                    <span>{employee.qualified_count ?? 0}</span>
+                    <span>{employee.fully_count ?? 0}</span>
+                    <span>{employee.expert_count ?? 0}</span>
+                    <span>{employee.access_gap_count ?? 0}</span>
+                    <span className="row-buttons">
+                      <button onClick={(e) => { e.stopPropagation(); setSelected(employee); }}>Vis</button>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(employee); }}>Rediger</button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <aside className="panel spotlight">
+            <div className="panel-head">
+              <h3>People spotlight</h3>
+              <p>Hvem kan mest, og hvor er hullene</p>
+            </div>
+
+            {spotlight ? (
+              <>
+                <div className="spotlight-box">
+                  <h4>{spotlight.full_name}</h4>
+                  <p>{spotlight.employee_code} · {spotlight.department || "No department"} · Availability {spotlight.availability_percent ?? 100}%</p>
+                </div>
+
+                <div className="chips">
+                  <span>Qualified services: {spotlight.qualified_count ?? 0}</span>
+                  <span>Fully capable: {spotlight.fully_count ?? 0}</span>
+                  <span>Expert footprint: {spotlight.expert_count ?? 0}</span>
+                  <span>Access gaps: {spotlight.access_gap_count ?? 0}</span>
+                </div>
+
+                <p className="small-text">
+                  Sterkeste tjenestetilknytninger:<br />
+                  · {spotlight.role_title || "Role not set"} — score {spotlight.availability_percent ?? 100}
+                </p>
+
+                <div className="spotlight-actions">
+                  <button className="blue">Åpne drilldown</button>
+                  <button onClick={() => openEdit(spotlight)}>Rediger</button>
+                  <button>Ny qualification</button>
+                </div>
+
+                <button className="danger" onClick={() => handleDeactivate(spotlight)}>
+                  Deaktiver ansatt
+                </button>
+              </>
+            ) : (
+              <p className="status">Velg en ansatt</p>
+            )}
+          </aside>
         </section>
-      )}
+      </main>
 
-      <EmployeeFormModal
-        open={modalOpen}
-        mode={modalMode}
-        employee={editingEmployee}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
-        nextEmployeeCode={nextEmployeeCode}
-      />
-    </AppShell>
+      {modalOpen && (
+        <div className="modal-backdrop">
+          <form className="modal" onSubmit={saveEmployee}>
+            <div className="modal-head">
+              <div>
+                <h2>{editing ? "Rediger ansatt" : "Ny ansatt"}</h2>
+                <p>Legg inn eller endre informasjon om personen</p>
+              </div>
+              <button type="button" onClick={() => setModalOpen(false)}>×</button>
+            </div>
+
+            <div className="form-grid">
+              <label>
+                Employee code
+                <input
+                  value={form.employee_code}
+                  readOnly
+                  className="readonly-input"
+                />
+              </label>
+              <label>Full name<input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required /></label>
+              <label>Email<input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
+              <label>Role<input value={form.role_title} onChange={(e) => setForm({ ...form, role_title: e.target.value })} /></label>
+              <label>
+                Department
+                <select
+                  value={form.department}
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                  required
+                >
+                  <option value="">Velg department</option>
+                  {departments
+                    .filter((dep) => dep !== "all")
+                    .map((dep) => (
+                      <option key={dep} value={dep}>
+                        {dep}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>Location<input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label>
+              <label>Availability %<input type="number" min="0" max="100" value={form.availability_percent} onChange={(e) => setForm({ ...form, availability_percent: e.target.value })} /></label>
+              <label>Active<select value={String(form.active)} onChange={(e) => setForm({ ...form, active: e.target.value === "true" })}><option value="true">Active</option><option value="false">Inactive</option></select></label>
+              <label className="wide">Notes<input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" onClick={() => setModalOpen(false)}>Cancel</button>
+              <button type="submit" className="blue">Save</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
   );
 }
