@@ -4,10 +4,7 @@ const createLink = async (data) => {
   const {
     service_id,
     system_id,
-    required_level,
-    min_score,
-    is_critical,
-    notes
+    display_order
   } = data;
 
   const [result] = await pool.execute(
@@ -18,17 +15,19 @@ const createLink = async (data) => {
       required_level,
       min_score,
       is_critical,
-      notes
+      notes,
+      display_order
     )
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     [
       service_id,
       system_id,
-      required_level ?? 'QUALIFIED',
-      min_score ?? 0,
-      is_critical ?? false,
-      notes ?? null
+      'QUALIFIED',
+      0,
+      false,
+      null,
+      display_order ?? 1
     ]
   );
 
@@ -36,33 +35,46 @@ const createLink = async (data) => {
 };
 
 const updateLink = async (id, data) => {
-  const {
-    required_level,
-    min_score,
-    is_critical,
-    notes
-  } = data;
+  const { service_id, system_id, display_order } = data;
 
   const [result] = await pool.execute(
     `
     UPDATE service_required_systems
     SET
-      required_level = ?,
-      min_score = ?,
-      is_critical = ?,
-      notes = ?
+      service_id = ?,
+      system_id = ?,
+      display_order = ?
     WHERE id = ?
     `,
     [
-      required_level,
-      min_score,
-      is_critical,
-      notes,
+      service_id,
+      system_id,
+      display_order ?? 1,
       id
     ]
   );
 
   return result;
+};
+
+const getAllLinks = async () => {
+  const [rows] = await pool.execute(`
+    SELECT
+      srs.id,
+      srs.service_id,
+      srv.service_code,
+      srv.name AS service_name,
+      srs.system_id,
+      sys.system_code,
+      sys.name AS system_name,
+      srs.display_order
+    FROM service_required_systems srs
+    JOIN services srv ON srs.service_id = srv.id
+    JOIN systems sys ON srs.system_id = sys.id
+    ORDER BY srv.service_code ASC, srs.display_order ASC, sys.name ASC
+  `);
+
+  return rows;
 };
 
 const getSystemsByService = async (serviceId) => {
@@ -134,6 +146,7 @@ const deleteLink = async (id) => {
 };
 
 module.exports = {
+  getAllLinks,
   createLink,
   updateLink,
   getSystemsByService,

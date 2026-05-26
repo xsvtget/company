@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 const departmentOptions = [
   "Administration",
   "Customer Service",
-  "Infrastructure",
-  "Operations",
-  "Support",
-  "Utvikling",
   "Infra",
   "OPS",
   "Sales & Marketing",
@@ -68,8 +64,8 @@ export default function EmployeeFormModal({
         type === "checkbox"
           ? checked
           : name === "availability_percent"
-          ? Number(value)
-          : value,
+            ? Number(value)
+            : value,
     }));
   }
 

@@ -4,6 +4,7 @@ const qualificationsController = require('../controllers/qualificationsControlle
 
 router.post('/', qualificationsController.createQualification);
 router.put('/:id', qualificationsController.updateQualification);
+router.get("/", qualificationsController.getAllQualifications);
 router.get('/employee/:employeeId', qualificationsController.getQualificationsByEmployee);
 router.get('/system/:systemId', qualificationsController.getQualificationsBySystem);
 router.delete('/:id', qualificationsController.deleteQualification);

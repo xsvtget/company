@@ -287,7 +287,7 @@ export default function ServiceSystemMappingPage() {
                     onChange={(e) => setForm({ ...form, required_level: e.target.value })}
                   >
                     <option value="QUALIFIED">QUALIFIED</option>
-                    <option value="FULLY">FULLY</option>
+                    <option value="FULLY_CAPABLE">FULLY_CAPABLE</option>
                     <option value="EXPERT">EXPERT</option>
                     <option value="ADMIN">ADMIN</option>
                   </select>

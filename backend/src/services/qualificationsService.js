@@ -159,6 +159,34 @@ const getQualificationsBySystem = async (systemId) => {
   return rows;
 };
 
+const getAllQualifications = async () => {
+  const [rows] = await pool.execute(`
+    SELECT
+      q.id,
+      q.employee_id,
+      e.employee_code,
+      e.full_name AS employee_name,
+      q.system_id,
+      s.system_code,
+      s.name AS system_name,
+      q.experience_score,
+      q.certification_points,
+      q.knowledge_score,
+      q.total_score,
+      q.qualification_level,
+      q.entry_date,
+      q.review_due_date,
+      q.is_reviewed,
+      q.notes
+    FROM qualifications q
+    JOIN employees e ON q.employee_id = e.id
+    JOIN systems s ON q.system_id = s.id
+    ORDER BY q.id DESC
+  `);
+
+  return rows;
+};
+
 const deleteQualification = async (id) => {
   const [result] = await pool.execute(
     `
@@ -176,5 +204,6 @@ module.exports = {
   updateQualification,
   getQualificationsByEmployee,
   getQualificationsBySystem,
+  getAllQualifications,
   deleteQualification
 };

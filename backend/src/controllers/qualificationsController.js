@@ -36,6 +36,20 @@ const updateQualification = async (req, res) => {
   }
 };
 
+const getAllQualifications = async (req, res) => {
+  try {
+    const rows = await qualificationsService.getAllQualifications();
+    res.json(rows);
+  } catch (error) {
+    console.error("getAllQualifications error:", error);
+    res.status(500).json({
+      error: error.message || "Unknown server error",
+      code: error.code || null,
+      sqlMessage: error.sqlMessage || null
+    });
+  }
+};
+
 const getQualificationsByEmployee = async (req, res) => {
   try {
     const rows = await qualificationsService.getQualificationsByEmployee(req.params.employeeId);
@@ -86,6 +100,7 @@ const deleteQualification = async (req, res) => {
 module.exports = {
   createQualification,
   updateQualification,
+  getAllQualifications,
   getQualificationsByEmployee,
   getQualificationsBySystem,
   deleteQualification

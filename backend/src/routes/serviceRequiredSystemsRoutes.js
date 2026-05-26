@@ -3,6 +3,7 @@ const router = express.Router();
 const serviceRequiredSystemsController = require('../controllers/serviceRequiredSystemsController');
 
 router.post('/', serviceRequiredSystemsController.createLink);
+router.get('/', serviceRequiredSystemsController.getAllLinks);
 router.put('/:id', serviceRequiredSystemsController.updateLink);
 router.get('/service/:serviceId', serviceRequiredSystemsController.getSystemsByService);
 router.get('/system/:systemId', serviceRequiredSystemsController.getServicesBySystem);

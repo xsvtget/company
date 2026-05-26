@@ -174,10 +174,11 @@ export default function ServicesPage() {
     }
   }
 
-  function getGap(service) {
+function getGap(service) {
   const min = Number(service.min_qualified || 0);
-  const qualified = Number(service.qualified_people_count || 0);
-  return Math.max(min - qualified, 0);
+  const fully = Number(service.fully_people_count || 0);
+
+  return Math.max(min - fully, 0);
 }
 
 function getSpof(service) {
@@ -330,7 +331,7 @@ return (
 
                     <span>{service.fully_people_count || 0}</span>
 
-                    <span>{getGap(service)}</span>
+                    <span>{service.access_gaps_count || 0}</span>
 
                     <span>
                     <span className={`spof-pill ${getSpof(service) ? "spof-yes" : "spof-no"}`}>
@@ -463,42 +464,22 @@ return (
             <div className="form-grid">
               <label>
                 Service code
-                <input value={form.service_code} readOnly className="readonly-input" />
+                <input value={form.service_code} disabled />
               </label>
 
               <label>
                 Service name
                 <input
                   value={form.name}
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value, service_name: e.target.value })
-                  }
-                  required
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
-              </label>
-
-              <label>
-                Category
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                >
-                  <option value="Managed Service">Managed Service</option>
-                  <option value="Consulting">Consulting</option>
-                  <option value="Security">Security</option>
-                  <option value="Infrastructure">Infrastructure</option>
-                  <option value="Application Management">Application Management</option>
-                  <option value="Network as a Service">Network as a Service</option>
-                  <option value="M365 Consultant">M365 Consultant</option>
-                </select>
               </label>
 
               <label>
                 Owner team
                 <input
-                  value={form.owner_team}
-                  onChange={(e) => setForm({ ...form, owner_team: e.target.value })}
-                  placeholder="Ikke satt"
+                  value={form.owner_name}
+                  onChange={(e) => setForm({ ...form, owner_name: e.target.value })}
                 />
               </label>
 
@@ -516,22 +497,20 @@ return (
               </label>
 
               <label>
-                Active
-                <select
-                  value={String(form.active)}
-                  onChange={(e) => setForm({ ...form, active: e.target.value === "true" })}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
+                Minimum qualified
+                <input
+                  type="number"
+                  value={form.min_qualified}
+                  onChange={(e) => setForm({ ...form, min_qualified: e.target.value })}
+                />
               </label>
 
-              <label className="wide">
-                Description
+              <label>
+                Preferred qualified
                 <input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Ingen beskrivelse"
+                  type="number"
+                  value={form.preferred_qualified}
+                  onChange={(e) => setForm({ ...form, preferred_qualified: e.target.value })}
                 />
               </label>
             </div>

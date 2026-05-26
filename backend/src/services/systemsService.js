@@ -48,20 +48,38 @@ const createSystem = async (data) => {
 const getSystems = async () => {
   const [rows] = await pool.execute(`
     SELECT
-      id,
-      system_code,
-      name,
-      owner_name,
-      business_owner,
-      technical_owner,
-      environment,
-      sensitivity,
-      active,
-      notes,
-      created_at,
-      updated_at
-    FROM systems
-    ORDER BY id DESC
+      s.id,
+      s.system_code,
+      s.name,
+      s.owner_name,
+      s.business_owner,
+      s.technical_owner,
+      s.environment,
+      s.sensitivity,
+      s.active,
+      s.notes,
+      s.created_at,
+      s.updated_at,
+
+      COUNT(DISTINCT q.employee_id) AS capable,
+
+      COUNT(DISTINCT CASE
+        WHEN q.qualification_level = 'EXPERT'
+        THEN q.employee_id
+      END) AS admins,
+
+      COUNT(DISTINCT srs.service_id) AS used_by
+
+    FROM systems s
+
+    LEFT JOIN qualifications q
+      ON q.system_id = s.id
+
+    LEFT JOIN service_required_systems srs
+      ON srs.system_id = s.id
+
+    GROUP BY s.id
+    ORDER BY s.id DESC
   `);
 
   return rows;

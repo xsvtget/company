@@ -36,6 +36,20 @@ const updateLink = async (req, res) => {
   }
 };
 
+const getAllLinks = async (req, res) => {
+  try {
+    const rows = await serviceRequiredSystemsService.getAllLinks();
+    res.json(rows);
+  } catch (error) {
+    console.error('getAllLinks error:', error);
+    res.status(500).json({
+      error: error.message || 'Unknown server error',
+      code: error.code || null,
+      sqlMessage: error.sqlMessage || null
+    });
+  }
+};
+
 const getSystemsByService = async (req, res) => {
   try {
     const rows = await serviceRequiredSystemsService.getSystemsByService(req.params.serviceId);
@@ -86,6 +100,7 @@ const deleteLink = async (req, res) => {
 module.exports = {
   createLink,
   updateLink,
+  getAllLinks,
   getSystemsByService,
   getServicesBySystem,
   deleteLink

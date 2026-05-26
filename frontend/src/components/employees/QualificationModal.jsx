@@ -131,10 +131,10 @@ export default function QualificationModal({ employee, onClose, onSaved }) {
               value={form.certification_points}
               onChange={(e) => setForm({ ...form, certification_points: e.target.value })}
             >
-              <option value="0">None</option>
-              <option value="1">Basic certificate</option>
-              <option value="2">Relevant certificate</option>
-              <option value="3">Advanced certificate</option>
+              <option value="None">None</option>
+              <option value="Associate">Associate</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
             </select>
           </label>
 
@@ -166,36 +166,17 @@ export default function QualificationModal({ employee, onClose, onSaved }) {
               onChange={(e) => setForm({ ...form, review_due_date: e.target.value })}
             />
           </label>
-
           <label>
-            Reviewed
-            <select
-              value={String(form.is_reviewed)}
-              onChange={(e) => setForm({ ...form, is_reviewed: e.target.value === "true" })}
-            >
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </label>
-
-          <label>
-            Total score
-            <input value={totalScore} readOnly className="readonly-input" />
-          </label>
-
-          <label>
-            Qualification level
-            <input value={qualificationLevel} readOnly className="readonly-input" />
-          </label>
-
-          <label className="wide">
-            Notes
+          Reviewed on
             <input
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Optional"
+              type="date"
+              value={form.reviewed_on || ""}
+              onChange={(e) =>
+                setForm({ ...form, reviewed_on: e.target.value })
+              }
             />
-          </label>
+        </label>
+
         </div>
 
         <div className="modal-actions">

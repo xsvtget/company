@@ -164,7 +164,10 @@ export default function EmployeesPage() {
     }
   }
 
-  const spotlight = details || selected;
+  const spotlight = {
+    ...selected,
+    ...details,
+  };
 
   return (
     <div className="workbench">
@@ -284,10 +287,10 @@ export default function EmployeesPage() {
                     </span>
                     <span>{employee.department || "–"}</span>
                     <span>{employee.availability_percent ?? 100}%</span>
-                    <span>{employee.qualified_count ?? 0}</span>
-                    <span>{employee.fully_count ?? 0}</span>
+                    <span>{employee.qualified_services ?? 0}</span>
+                    <span>{employee.fully_capable ?? 0}</span>
                     <span>{employee.expert_count ?? 0}</span>
-                    <span>{employee.access_gap_count ?? 0}</span>
+                    <span>{employee.access_gaps ?? 0}</span>
                     <span className="row-buttons">
                       <button onClick={(e) => { e.stopPropagation(); setSelected(employee); }}>Vis</button>
                       <button onClick={(e) => { e.stopPropagation(); openEdit(employee); }}>Rediger</button>
@@ -312,10 +315,10 @@ export default function EmployeesPage() {
                 </div>
 
                 <div className="chips">
-                  <span>Qualified services: {spotlight.qualified_count ?? 0}</span>
-                  <span>Fully capable: {spotlight.fully_count ?? 0}</span>
+                  <span>Qualified services: {spotlight.qualified_services ?? 0}</span>
+                  <span>Fully capable: {spotlight.fully_capable ?? 0}</span>
                   <span>Expert footprint: {spotlight.expert_count ?? 0}</span>
-                  <span>Access gaps: {spotlight.access_gap_count ?? 0}</span>
+                  <span>Access gaps: {spotlight.access_gaps ?? 0}</span>
                 </div>
 
                 <p className="small-text">
@@ -323,19 +326,74 @@ export default function EmployeesPage() {
                   · {spotlight.role_title || "Role not set"} — score {spotlight.availability_percent ?? 100}
                 </p>
                 
-                <div className="qualification-list">
-                  <h4>Qualifications</h4>
+
+                <div className="detail-section">
+                  <h4>Qualified services</h4>
+
+                  {spotlight?.qualifiedServices?.length ? (
+                    spotlight.qualifiedServices.map((service, index) => (
+                      <p key={index}>
+                        • {service.name}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="small-text">No qualified services</p>
+                  )}
+                </div>
+                {spotlight?.fullyCapableServices?.length > 0 && (
+                  <div className="detail-section">
+                    <h4>Fully capable services</h4>
+
+                    {spotlight?.fullyCapableServices?.length ? (
+                      spotlight.fullyCapableServices.map((service, index) => (
+                        <p key={index}>• {service.name}</p>
+                      ))
+                    ) : (
+                      <p className="small-text">No fully capable services</p>
+                    )}
+                  </div>
+                )}
+
+                {spotlight?.expertServices?.length > 0 && (
+                  <div className="detail-section">
+                    <h4>Expert-ready services</h4>
+
+                    {spotlight?.expertServices?.length ? (
+                      spotlight.expertServices.map((service, index) => (
+                        <p key={index}>• {service.name}</p>
+                      ))
+                    ) : (
+                      <p className="small-text">No expert-ready services</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="detail-section">
+                  <h4>Access gaps</h4>
+
+                  {spotlight?.accessGaps?.length ? (
+                    spotlight.accessGaps.map((gap, index) => (
+                      <p key={index}>
+                        • {gap.service_name} → missing {gap.missing_systems}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="small-text">No access gaps</p>
+                  )}
+                </div>
+
+                <div className="detail-block">
+                  <h4>System qualifications</h4>
 
                   {employeeQualifications.length === 0 ? (
                     <p className="small-text">Ingen qualifications registrert.</p>
                   ) : (
                     employeeQualifications.map((q) => (
-                      <div key={q.id} className="qualification-item">
-                        <strong>{q.system_name || q.name || `System ${q.system_id}`}</strong>
-                        <span>
-                          {q.qualification_level} · score {q.total_score}
-                        </span>
-                      </div>
+                      <p key={q.id}>
+                        {q.system_name || q.name || `System ${q.system_id}`} — score {q.total_score}
+                        {q.certification_points && ` • cert ${q.certification_points}`}
+                        {q.review_due_date && ` • review due ${String(q.review_due_date).slice(0, 10)}`}
+                      </p>
                     ))
                   )}
                 </div>
@@ -349,9 +407,7 @@ export default function EmployeesPage() {
                   </button>
                 </div>
 
-                <button className="danger" onClick={() => handleDeactivate(spotlight)}>
-                  Deaktiver ansatt
-                </button>
+                
               </>
             ) : (
               <p className="status">Velg en ansatt</p>

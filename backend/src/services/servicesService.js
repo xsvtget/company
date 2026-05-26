@@ -54,30 +54,35 @@ const getServices = async () => {
       s.active,
       s.notes,
 
-      COUNT(DISTINCT srs.system_id) AS required_systems_count,
+      COALESCE(req.required_count, 0) AS required_systems_count,
 
       COUNT(DISTINCT CASE
-        WHEN emp_coverage.covered_systems = req.required_count
-        THEN emp_coverage.employee_id
+        WHEN ec.covered_systems = req.required_count
+        THEN ec.employee_id
       END) AS qualified_people_count,
 
-      0 AS fully_people_count,
-      0 AS access_gaps_count,
+      COUNT(DISTINCT CASE
+        WHEN ec.fully_covered_systems = req.required_count
+        THEN ec.employee_id
+      END) AS fully_people_count,
+
+      COUNT(DISTINCT CASE
+        WHEN ec.has_access_gap = 1
+        THEN ec.employee_id
+      END) AS access_gaps_count,
 
       CASE
+        WHEN COALESCE(req.required_count, 0) = 0 THEN 0
         WHEN COALESCE(s.preferred_qualified, 2) = 0 THEN 0
         ELSE ROUND(
           COUNT(DISTINCT CASE
-            WHEN emp_coverage.covered_systems = req.required_count
-            THEN emp_coverage.employee_id
+            WHEN ec.covered_systems = req.required_count
+            THEN ec.employee_id
           END) / COALESCE(s.preferred_qualified, 2) * 100
         )
       END AS coverage_percent
 
     FROM services s
-
-    LEFT JOIN service_required_systems srs
-      ON s.id = srs.service_id
 
     LEFT JOIN (
       SELECT
@@ -85,20 +90,47 @@ const getServices = async () => {
         COUNT(DISTINCT system_id) AS required_count
       FROM service_required_systems
       GROUP BY service_id
-    ) req ON s.id = req.service_id
+    ) req ON req.service_id = s.id
 
     LEFT JOIN (
       SELECT
         srs.service_id,
         q.employee_id,
-        COUNT(DISTINCT srs.system_id) AS covered_systems
+
+        COUNT(DISTINCT CASE
+          WHEN q.total_score >= srs.min_score
+          THEN srs.system_id
+        END) AS covered_systems,
+
+        COUNT(DISTINCT CASE
+          WHEN q.total_score >= srs.min_score
+           AND q.qualification_level IN ('FULLY_CAPABLE', 'EXPERT')
+          THEN srs.system_id
+        END) AS fully_covered_systems,
+
+        MAX(CASE
+          WHEN q.total_score < srs.min_score
+          THEN 1 ELSE 0
+        END) AS has_access_gap
+
       FROM service_required_systems srs
       JOIN qualifications q
-        ON srs.system_id = q.system_id
+        ON q.system_id = srs.system_id
       GROUP BY srs.service_id, q.employee_id
-    ) emp_coverage ON s.id = emp_coverage.service_id
+    ) ec ON ec.service_id = s.id
 
-    GROUP BY s.id
+    GROUP BY
+      s.id,
+      s.name,
+      s.service_code,
+      s.owner_name,
+      s.criticality,
+      s.min_qualified,
+      s.preferred_qualified,
+      s.active,
+      s.notes,
+      req.required_count
+
     ORDER BY s.id DESC
   `);
 
@@ -186,47 +218,136 @@ const deactivateService = async (id) => {
 
 
 const getServiceDrilldown = async (serviceId) => {
-  // 1. сам сервіс
-  const [service] = await pool.execute(
-    `SELECT * FROM services WHERE id = ?`,
-    [serviceId]
-  );
-
-  if (!service.length) return null;
-
-  // 2. required systems
-  const [systems] = await pool.execute(
+  const [serviceRows] = await pool.execute(
     `
-    SELECT s.name
-    FROM service_required_systems srs
-    JOIN systems s ON s.id = srs.system_id
-    WHERE srs.service_id = ?
+    SELECT
+      id,
+      service_code,
+      name,
+      owner_name,
+      criticality,
+      min_qualified,
+      preferred_qualified,
+      active,
+      notes
+    FROM services
+    WHERE id = ?
     `,
     [serviceId]
   );
 
-  // 3. люди (ВАЖЛИВО 🔥)
+  if (!serviceRows.length) return null;
+
+  const service = serviceRows[0];
+
+  const [systems] = await pool.execute(
+    `
+    SELECT
+      sys.id,
+      sys.system_code,
+      sys.name,
+      srs.required_level,
+      srs.min_score,
+      srs.critical_level,
+      srs.notes
+    FROM service_required_systems srs
+    JOIN systems sys
+      ON sys.id = srs.system_id
+    WHERE srs.service_id = ?
+    ORDER BY sys.name
+    `,
+    [serviceId]
+  );
+
   const [people] = await pool.execute(
     `
     SELECT
+      e.id AS employee_id,
+      e.employee_code,
       e.full_name AS name,
-      q.total_score AS score,
-      CASE 
-        WHEN q.qualification_level = 'EXPERT' THEN 'fully'
-        WHEN q.qualification_level IN ('FULLY_CAPABLE', 'QUALIFIED') THEN 'qualified'
+
+      COUNT(DISTINCT CASE
+        WHEN q.total_score >= srs.min_score
+        THEN srs.system_id
+      END) AS covered_systems,
+
+      COUNT(DISTINCT CASE
+        WHEN q.total_score >= srs.min_score
+         AND q.qualification_level IN ('FULLY_CAPABLE', 'EXPERT')
+        THEN srs.system_id
+      END) AS fully_covered_systems,
+
+      MAX(q.total_score) AS score,
+
+      CASE
+        WHEN COUNT(DISTINCT CASE
+          WHEN q.total_score >= srs.min_score
+           AND q.qualification_level IN ('FULLY_CAPABLE', 'EXPERT')
+          THEN srs.system_id
+        END) = req.required_count
+        THEN 'fully'
+
+        WHEN COUNT(DISTINCT CASE
+          WHEN q.total_score >= srs.min_score
+          THEN srs.system_id
+        END) = req.required_count
+        THEN 'qualified'
+
         ELSE 'access gap'
-      END as status
-    FROM service_required_systems srs
-    JOIN qualifications q ON q.system_id = srs.system_id
-    JOIN employees e ON e.id = q.employee_id
+      END AS status
+
+    FROM employees e
+
+    JOIN qualifications q
+      ON q.employee_id = e.id
+
+    JOIN service_required_systems srs
+      ON srs.system_id = q.system_id
+
+    JOIN (
+      SELECT
+        service_id,
+        COUNT(DISTINCT system_id) AS required_count
+      FROM service_required_systems
+      WHERE service_id = ?
+      GROUP BY service_id
+    ) req ON req.service_id = srs.service_id
+
     WHERE srs.service_id = ?
-    ORDER BY q.total_score DESC
+
+    GROUP BY
+      e.id,
+      e.employee_code,
+      e.full_name,
+      req.required_count
+
+    ORDER BY
+      CASE status
+        WHEN 'fully' THEN 1
+        WHEN 'qualified' THEN 2
+        ELSE 3
+      END,
+      score DESC
     `,
-    [serviceId]
+    [serviceId, serviceId]
   );
 
+  const requiredCount = systems.length;
+
+  const qualifiedPeople = people.filter((p) => p.status === "qualified" || p.status === "fully").length;
+  const fullyPeople = people.filter((p) => p.status === "fully").length;
+  const accessGapPeople = people.filter((p) => p.status === "access gap").length;
+
   return {
-    ...service[0],
+    ...service,
+    required_systems_count: requiredCount,
+    qualified_people_count: qualifiedPeople,
+    fully_people_count: fullyPeople,
+    access_gaps_count: accessGapPeople,
+    coverage_percent:
+      Number(service.preferred_qualified || 2) === 0
+        ? 0
+        : Math.round((qualifiedPeople / Number(service.preferred_qualified || 2)) * 100),
     systems,
     people
   };
